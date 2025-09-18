@@ -1,0 +1,164 @@
+/* ConvexValue-inspired styling for Schwab Options Dashboard */
+
+:root {
+    --bg-color: #0e1117;
+    --paper-color: #1e2130;
+    --text-color: #ffffff;
+    --primary-color: #00d4aa;
+    --secondary-color: #ff6b6b;
+    --accent-color: #4dabf7;
+    --border-color: #333;
+}
+
+/* Global styles */
+body {
+    background-color: var(--bg-color) !important;
+    color: var(--text-color) !important;
+    font-family: 'Inter', sans-serif !important;
+}
+
+/* Module cards */
+.module-card {
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.module-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0, 212, 170, 0.3) !important;
+    border-color: var(--primary-color) !important;
+}
+
+/* Data tables */
+.dash-table-container {
+    background-color: var(--paper-color) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 8px !important;
+}
+
+.dash-table-container table {
+    background-color: var(--paper-color) !important;
+    color: var(--text-color) !important;
+}
+
+.dash-table-container .dash-header {
+    background-color: var(--accent-color) !important;
+    color: var(--text-color) !important;
+    font-weight: 600 !important;
+}
+
+.dash-table-container .dash-cell {
+    background-color: var(--paper-color) !important;
+    color: var(--text-color) !important;
+    border: 1px solid var(--border-color) !important;
+}
+
+/* Status indicators */
+.status-bar {
+    font-size: 0.9rem;
+}
+
+/* Charts */
+.plotly-graph-div {
+    background-color: var(--paper-color) !important;
+}
+
+/* Cards and containers */
+.card {
+    background-color: var(--paper-color) !important;
+    border: 1px solid var(--border-color) !important;
+    color: var(--text-color) !important;
+}
+
+.card-title {
+    color: var(--primary-color) !important;
+}
+
+/* Buttons */
+.btn-primary {
+    background-color: var(--primary-color) !important;
+    border-color: var(--primary-color) !important;
+    color: #000 !important;
+    font-weight: 600 !important;
+}
+
+.btn-primary:hover {
+    background-color: #00b894 !important;
+    border-color: #00b894 !important;
+}
+
+/* Form inputs */
+.form-control {
+    background-color: var(--paper-color) !important;
+    border: 1px solid var(--border-color) !important;
+    color: var(--text-color) !important;
+}
+
+.form-control:focus {
+    background-color: var(--paper-color) !important;
+    border-color: var(--primary-color) !important;
+    color: var(--text-color) !important;
+    box-shadow: 0 0 0 0.2rem rgba(0, 212, 170, 0.25) !important;
+}
+
+/* Navigation */
+.navbar-dark {
+    background-color: var(--bg-color) !important;
+    border-bottom: 1px solid var(--border-color) !important;
+}
+
+.navbar-brand {
+    color: var(--primary-color) !important;
+    font-weight: 700 !important;
+}
+
+/* Badges */
+.badge {
+    font-size: 0.8rem !important;
+}
+
+/* Loading spinner */
+.dash-spinner {
+    color: var(--primary-color) !important;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg-color);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--primary-color);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #00b894;
+}
+
+/* Custom animations */
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
+.updating {
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .module-card {
+        margin-bottom: 1rem;
+    }
+    
+    .status-bar {
+        font-size: 0.8rem;
+    }
+}

@@ -1,0 +1,37 @@
+/* Performance optimizations for Plotly charts */
+.js-plotly-plot canvas {
+    /* Optimize canvas for frequent reading operations */
+    /* This prevents the browser warning about willReadFrequently */
+    image-rendering: optimizeSpeed;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: optimize-contrast;
+    -ms-interpolation-mode: nearest-neighbor;
+}
+
+/* Optimize 3D plots specifically */
+.js-plotly-plot .gl-container canvas {
+    /* WebGL optimizations */
+    image-rendering: auto;
+}
+
+/* Prevent flashing during chart updates */
+.dash-spinner {
+    transition: opacity 0.2s ease;
+}
+
+/* Optimize loading states */
+.loading-state {
+    opacity: 0.7;
+    transition: opacity 0.3s ease;
+}
+
+/* Memory leak prevention styles */
+.plotly-notifier {
+    pointer-events: none;
+}
+
+/* Prevent console warnings for React components */
+.dash-callback-output {
+    position: relative;
+}

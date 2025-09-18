@@ -1,0 +1,496 @@
+/* 
+╔═══════════════════════════════════════════════════════════════════════╗
+║                   SchwaOptions - Charm Terminal Theme                 ║
+║                   "Making the command line glamorous"                 ║  
+║                   Inspired by Charm.sh / Bubble Tea                   ║
+╚═══════════════════════════════════════════════════════════════════════╝
+*/
+
+:root {
+    /* Charm Terminal - Glamorous Command Line */
+    --terminal-bg: #1a1b23;          /* Rich dark background */
+    --terminal-surface: #22242e;     /* Elevated surface */
+    --terminal-border: #3c3f4a;      /* Refined borders */
+    --terminal-text: #f8f9fa;        /* Crisp white text */
+    --terminal-muted: #9ca3af;       /* Elegant muted text */
+    
+    /* Charm Color Palette - Vibrant but Sophisticated */
+    --charm-pink: #ff79c6;           /* Playful pink accent */
+    --charm-green: #5fb85f;          /* Toned down terminal green */  
+    --charm-blue: #8be9fd;           /* Crystal cyan */
+    --charm-purple: #bd93f9;         /* Elegant purple */
+    --charm-yellow: #f1fa8c;         /* Warm yellow */
+    --charm-orange: #ffb86c;         /* Friendly orange */
+    --charm-red: #ff5555;            /* Alert red */
+    
+    /* Primary Brand Colors */
+    --primary: var(--charm-green);
+    --secondary: var(--charm-pink);
+    --accent: var(--charm-blue);
+    
+    /* Status Colors */
+    --success: var(--charm-green);
+    --warning: var(--charm-yellow);
+    --danger: var(--charm-red);
+    --info: var(--charm-blue);
+}
+
+/* Body and Main Layout */
+body {
+    background-color: var(--terminal-bg) !important;
+    color: var(--terminal-text) !important;
+    font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', 'Monaco', monospace !important;
+    line-height: 1.6;
+}
+
+/* Override Bootstrap defaults */
+.bg-dark {
+    background-color: var(--terminal-bg) !important;
+}
+
+/* Navigation Bar - Terminal Style */
+.navbar {
+    background-color: var(--terminal-surface) !important;
+    border-bottom: 2px solid var(--charm-green) !important;
+    position: relative !important;
+}
+
+.navbar::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--charm-green), var(--charm-blue), var(--charm-purple), var(--charm-pink));
+    opacity: 0.7;
+}
+
+.navbar-brand {
+    color: var(--charm-green) !important;
+    font-weight: 700 !important;
+    background: linear-gradient(45deg, var(--charm-green), var(--charm-blue));
+    -webkit-background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+    background-clip: text !important;
+}
+
+/* Charm-style Links */
+a, .btn-outline-light {
+    color: var(--charm-blue) !important;
+    text-decoration: none !important;
+    border-color: var(--charm-blue) !important;
+    transition: all 0.3s ease !important;
+    position: relative !important;
+}
+
+a:hover, .btn-outline-light:hover {
+    color: var(--terminal-bg) !important;
+    background: linear-gradient(45deg, var(--charm-blue), var(--charm-purple)) !important;
+    border-color: transparent !important;
+    transform: translateY(-1px) !important;
+}
+
+/* Cards - Terminal Windows */
+.card {
+    background-color: var(--terminal-surface) !important;
+    border: 1px solid var(--terminal-border) !important;
+    border-radius: 8px !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5) !important;
+    color: var(--terminal-text) !important;
+}
+
+.card-title {
+    color: var(--charm-green) !important;
+    font-weight: 600 !important;
+}
+
+.card-text {
+    color: var(--terminal-muted) !important;
+}
+
+/* Module Cards - Terminal Style */
+.module-card {
+    border: 2px solid var(--terminal-border) !important;
+    transition: all 0.3s ease !important;
+    position: relative !important;
+    overflow: hidden !important;
+}
+
+/* Enhanced Module Card Styling */
+.module-card .card-header {
+    background: linear-gradient(90deg, var(--terminal-surface), var(--terminal-bg)) !important;
+    border-bottom: 1px solid var(--terminal-border) !important;
+    color: var(--terminal-text) !important;
+}
+
+.module-launch-btn {
+    background: linear-gradient(135deg, var(--charm-green), var(--charm-blue)) !important;
+    border: none !important;
+    transition: all 0.3s ease !important;
+}
+
+.module-launch-btn:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 4px 15px rgba(95, 184, 95, 0.3) !important;
+}
+
+.status-indicator {
+    font-size: 0.8em !important;
+    animation: status-pulse 2s infinite !important;
+}
+
+@keyframes status-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}
+
+/* Enhanced Ticker Input Styling */
+.ticker-input-card .card-header {
+    background: linear-gradient(90deg, var(--terminal-surface), var(--terminal-bg)) !important;
+    border-bottom: 1px solid var(--terminal-border) !important;
+    color: var(--terminal-text) !important;
+}
+
+.ticker-input {
+    font-family: 'JetBrains Mono', monospace !important;
+    font-weight: 600 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 1px !important;
+}
+
+.update-btn {
+    background: linear-gradient(135deg, var(--charm-green), var(--charm-blue)) !important;
+    border: none !important;
+    transition: all 0.3s ease !important;
+}
+
+.update-btn:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 4px 15px rgba(95, 184, 95, 0.3) !important;
+}
+
+/* Quick ticker buttons */
+.btn-outline-primary {
+    border-color: var(--charm-blue) !important;
+    color: var(--charm-blue) !important;
+    transition: all 0.3s ease !important;
+}
+
+.btn-outline-primary:hover {
+    background-color: var(--charm-blue) !important;
+    border-color: var(--charm-blue) !important;
+    color: var(--terminal-bg) !important;
+    transform: translateY(-1px) !important;
+}
+
+/* Enhanced Loading States */
+.loading-enhanced {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    color: var(--charm-green) !important;
+}
+
+.loading-spinner {
+    width: 16px !important;
+    height: 16px !important;
+    border: 2px solid var(--terminal-border) !important;
+    border-top: 2px solid var(--charm-green) !important;
+    border-radius: 50% !important;
+    animation: spin 1s linear infinite !important;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Terminal-style progress bar */
+.progress-terminal {
+    height: 4px !important;
+    background-color: var(--terminal-border) !important;
+    border-radius: 2px !important;
+    overflow: hidden !important;
+}
+
+.progress-terminal .progress-bar {
+    background: linear-gradient(90deg, var(--charm-green), var(--charm-blue)) !important;
+    transition: width 0.3s ease !important;
+}
+
+.module-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--charm-pink), var(--charm-purple), var(--charm-blue), var(--charm-green));
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.module-card:hover::before {
+    opacity: 1;
+}
+
+.module-card:hover {
+    border-color: var(--charm-green) !important;
+    transform: translateY(-3px) !important;
+    box-shadow: 0 8px 25px rgba(80, 250, 123, 0.15), 0 4px 10px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Charm Buttons - Glamorous Terminal */
+.btn-primary {
+    background: linear-gradient(135deg, var(--charm-green), var(--charm-blue)) !important;
+    border: none !important;
+    color: var(--terminal-bg) !important;
+    font-weight: 600 !important;
+    position: relative !important;
+    overflow: hidden !important;
+}
+
+.btn-primary::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, var(--charm-pink), var(--charm-purple));
+    transition: left 0.3s ease;
+}
+
+.btn-primary:hover::before {
+    left: 0;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px) !important;
+}
+
+.btn-primary span {
+    position: relative;
+    z-index: 1;
+}
+
+.btn-success {
+    background-color: var(--charm-green) !important;
+    border-color: var(--charm-green) !important;
+}
+
+.btn-outline-primary {
+    color: var(--charm-green) !important;
+    border-color: var(--charm-green) !important;
+    background: transparent !important;
+}
+
+.btn-outline-primary:hover {
+    background: linear-gradient(135deg, var(--charm-green), var(--charm-blue)) !important;
+    color: var(--terminal-bg) !important;
+    border-color: transparent !important;
+}
+
+/* Input Fields - Terminal Style */
+.form-control {
+    background-color: var(--terminal-bg) !important;
+    border: 2px solid var(--terminal-border) !important;
+    color: var(--terminal-text) !important;
+    border-radius: 6px !important;
+    font-family: 'JetBrains Mono', monospace !important;
+}
+
+.form-control:focus {
+    background-color: var(--terminal-bg) !important;
+    border-color: var(--charm-green) !important;
+    color: var(--terminal-text) !important;
+    box-shadow: 0 0 0 0.2rem rgba(80, 250, 123, 0.25) !important;
+}
+
+.form-control::placeholder {
+    color: var(--terminal-muted) !important;
+}
+
+/* Status Bar - Terminal Style */
+.status-bar {
+    background-color: var(--terminal-bg) !important;
+    border: 1px solid var(--terminal-border) !important;
+    border-radius: 6px !important;
+    font-family: 'JetBrains Mono', monospace !important;
+    font-size: 0.9em !important;
+}
+
+/* Badges - Terminal Style */
+.badge {
+    font-family: 'JetBrains Mono', monospace !important;
+    font-weight: 600 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+}
+
+.badge.bg-success {
+    background: linear-gradient(135deg, var(--charm-green), var(--charm-blue)) !important;
+    color: var(--terminal-bg) !important;
+}
+
+.badge.bg-danger {
+    background-color: var(--charm-red) !important;
+}
+
+.terminal-badge {
+    font-size: 0.75em !important;
+    padding: 4px 8px !important;
+    border-radius: 4px !important;
+    animation: badge-glow 3s infinite !important;
+}
+
+@keyframes badge-glow {
+    0%, 100% { box-shadow: 0 0 5px rgba(95, 184, 95, 0.3); }
+    50% { box-shadow: 0 0 15px rgba(95, 184, 95, 0.6); }
+}
+
+/* Enhanced Status Bar */
+.status-bar .card-body {
+    background: linear-gradient(90deg, var(--terminal-bg), var(--terminal-surface)) !important;
+}
+
+/* Professional Icon Styling */
+.fas {
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3)) !important;
+}
+
+/* Typography - Terminal Style */
+h1, h2, h3, h4, h5, h6 {
+    color: var(--terminal-text) !important;
+    font-weight: 600 !important;
+}
+
+h2 {
+    background: linear-gradient(45deg, var(--charm-green), var(--charm-blue), var(--charm-purple));
+    -webkit-background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+    background-clip: text !important;
+    font-weight: 700 !important;
+}
+
+.text-muted {
+    color: var(--terminal-muted) !important;
+}
+
+.text-success {
+    color: var(--charm-green) !important;
+}
+
+.text-info {
+    color: var(--charm-blue) !important;
+}
+
+.text-warning {
+    color: var(--charm-yellow) !important;
+}
+
+.text-danger {
+    color: var(--charm-red) !important;
+}
+
+.text-primary {
+    color: var(--charm-purple) !important;
+}
+
+/* Container Styling */
+.container-fluid {
+    background-color: var(--terminal-bg) !important;
+    min-height: 100vh !important;
+}
+
+/* Scrollbar - Terminal Style */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--terminal-bg);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--terminal-border);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--charm-green);
+}
+
+/* Charm Animation Effects */
+@keyframes charm-glow {
+    0% {
+        box-shadow: 0 0 3px rgba(80, 250, 123, 0.3);
+    }
+    50% {
+        box-shadow: 0 0 8px rgba(139, 233, 253, 0.4);
+    }
+    100% {
+        box-shadow: 0 0 3px rgba(189, 147, 249, 0.3);
+    }
+}
+
+/* Terminal Cursor Effect */
+.terminal-cursor::after {
+    content: '_';
+    color: var(--charm-green);
+    animation: terminal-blink 1s infinite;
+}
+
+@keyframes terminal-blink {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0; }
+}
+
+/* Status Indicators */
+.status-indicator {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 8px;
+    animation: terminal-glow 2s infinite;
+}
+
+.status-indicator.connected {
+    background-color: var(--charm-green);
+    animation: charm-glow 2s infinite;
+}
+
+.status-indicator.disconnected {
+    background-color: var(--charm-red);
+}
+
+/* Loading Animation - Terminal Style */
+.loading-terminal {
+    color: var(--charm-green);
+}
+
+.loading-terminal::after {
+    content: '';
+    animation: loading-dots 1.5s infinite;
+}
+
+@keyframes loading-dots {
+    0% { content: ''; }
+    25% { content: '.'; }
+    50% { content: '..'; }
+    75% { content: '...'; }
+    100% { content: ''; }
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+    .navbar-brand {
+        font-size: 1.1em !important;
+    }
+    
+    .module-card {
+        margin-bottom: 1rem !important;
+    }
+}
