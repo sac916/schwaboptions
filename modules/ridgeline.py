@@ -14,7 +14,7 @@ import warnings
 warnings.filterwarnings('ignore')
 
 from modules.base_module import BaseModule
-from data.schwab_client import schwab_client
+from data.module_data_adapter import ModuleDataAdapter
 from data.processors import OptionsProcessor
 from config import THEME_CONFIG
 
@@ -28,24 +28,28 @@ class RidgelineModule(BaseModule):
             description="Live ridgeline plots showing options chain depth visualization"
         )
         self.ridgeline_history = []  # Store historical ridgeline data
+        self.data_adapter = ModuleDataAdapter()
         self.current_spot = None
 
-    def update_data(self, ticker: str, **kwargs):
-        """Update ridgeline data"""
+    def update_data(self, ticker: str, mode: str = "auto", target_date = None, **kwargs):
+        """Update ridgeline data using universal data adapter"""
         try:
-            raw_data = schwab_client.get_option_chain(
+            # Get data through universal adapter
+            data_result = self.data_adapter.get_options_analysis(
                 symbol=ticker,
-                contractType="ALL",           # Get both calls and puts
-                strikeCount=50,               # More strikes for better ridgeline
-                includeUnderlyingQuote=True,  # Include underlying stock data
-                range="ALL",                  # All options for full distribution
-                daysToExpiration=120          # 4 months for multiple ridges
+                analysis_type="ridgeline",
+                force_mode=mode,
+                target_date=target_date
             )
-            if raw_data:
-                self.data = OptionsProcessor.parse_option_chain(raw_data)
+
+            if data_result and data_result.get('options_data') is not None:
+                self.data = data_result['options_data']
+                self.data_quality = data_result.get('data_quality')
+                self.data_info = data_result.get('data_info', {})
                 self._last_updated = datetime.now()
 
                 # Extract current spot price
+                raw_data = data_result.get('raw_data', {})
                 if hasattr(raw_data, 'underlyingQuote') and raw_data.underlyingQuote:
                     self.current_spot = raw_data.underlyingQuote.get('last', 0)
                 elif not self.data.empty:
@@ -68,6 +72,15 @@ class RidgelineModule(BaseModule):
                 return self.data
         except Exception as e:
             print(f"Error updating ridgeline data: {e}")
+        return None
+
+    def get_data_quality_info(self):
+        """Get current data quality information for UI display"""
+        if hasattr(self, 'data_quality') and hasattr(self, 'data_info'):
+            return {
+                'quality': self.data_quality,
+                'info': self.data_info
+            }
         return None
 
     def _calculate_ridgeline_metrics(self):
@@ -101,7 +114,9 @@ class RidgelineModule(BaseModule):
             # Header
             dbc.Row([
                 dbc.Col([
-                    html.H3(f"📊 Ridgeline Analysis - {ticker}", className="text-white mb-3"),
+                    html.H3(f"📊 Ridgeline Analysis - {ticker}",
+                           id="ridgeline-header",
+                           className="text-white mb-3"),
                     html.P("Live ridgeline plots showing options chain depth and distribution",
                            className="text-muted mb-4")
                 ])

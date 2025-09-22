@@ -13,7 +13,9 @@ from config import THEME_CONFIG, APP_HOST, APP_PORT, DEBUG_MODE, DEFAULT_TICKERS
 from components.navigation import create_module_grid, create_header, create_ticker_input, create_status_bar
 from data.schwab_client import schwab_client
 from data.enhanced_schwab_client import enhanced_schwab_client
+from data.module_data_adapter import ModuleDataAdapter
 from components.auth_modal import create_auth_modal, create_auth_success_alert, create_auth_error_alert, create_auth_url_display
+from components.data_quality import create_data_quality_alert, create_data_mode_buttons, create_module_data_controls
 from data.processors import OptionsProcessor
 from modules.options_chain import options_chain_module, create_enhanced_data_table, create_options_charts
 from modules.iv_surface import iv_surface_module
@@ -400,7 +402,7 @@ def fetch_options_data(n_clicks, ticker, min_volume):
                 "❌ API Error",
                 None
             )
-        
+
         # Process data
         try:
             print("About to call OptionsProcessor.parse_option_chain")
@@ -744,8 +746,8 @@ def update_iv_data(n_clicks, ticker):
     
     print(f"🔍 IV Update: Fetching data for {ticker}")
     
-    # Update data
-    data = iv_surface_module.update_data(ticker)
+    # Update data with universal adapter (auto mode by default)
+    data = iv_surface_module.update_data(ticker, mode="auto")
     
     if data is not None and not data.empty:
         # Create summary metrics
@@ -865,8 +867,8 @@ def update_heatmap_data(n_clicks, ticker):
     
     print(f"🔍 Heatmap Update: Fetching data for {ticker}")
     
-    # Update data
-    data = options_heatmap_module.update_data(ticker)
+    # Update data with universal adapter (auto mode by default)
+    data = options_heatmap_module.update_data(ticker, mode="auto")
     
     if data is not None and not data.empty:
         # Create summary metrics
@@ -983,8 +985,8 @@ def update_flow_data(n_clicks, ticker):
     
     print(f"🔍 Flow Scanner: Analyzing flow for {ticker}")
     
-    # Update data
-    data = flow_scanner_module.update_data(ticker)
+    # Update data with universal adapter (auto mode by default)
+    data = flow_scanner_module.update_data(ticker, mode="auto")
     
     if data is not None and not data.empty:
         # Create alert cards for unusual activity
@@ -1304,6 +1306,160 @@ def process_callback_url(n_clicks, callback_url):
     except Exception as e:
         alert = create_auth_error_alert(f"Unexpected error: {str(e)}")
         return alert, {"display": "none"}, callback_url, dash.no_update
+
+# Universal Data Quality and Mode Selection Callbacks
+@callback(
+    [Output({"type": "module-data-info", "module": ALL}, "children"),
+     Output({"type": "module-content", "module": ALL}, "children")],
+    [Input({"type": "live-btn", "module": ALL}, "n_clicks"),
+     Input({"type": "historical-btn", "module": ALL}, "n_clicks"),
+     Input({"type": "auto-btn", "module": ALL}, "n_clicks"),
+     Input({"type": "refresh-btn", "module": ALL}, "n_clicks")],
+    [State("current-ticker-store", "data"),
+     State({"type": "module-data-info", "module": ALL}, "id")],
+    prevent_initial_call=True
+)
+def update_universal_module_data(live_clicks, hist_clicks, auto_clicks, refresh_clicks,
+                                ticker, module_ids):
+    """Universal callback for data mode selection and refresh across all modules"""
+    ctx = dash.callback_context
+    if not ctx.triggered or not ticker:
+        return [dash.no_update] * len(module_ids), [dash.no_update] * len(module_ids)
+
+    # Determine which button was clicked and which module
+    button_id = ctx.triggered[0]["prop_id"].split(".")[0]
+    button_data = eval(button_id) if isinstance(button_id, str) and button_id.startswith("{") else {}
+
+    if not button_data or 'module' not in button_data:
+        return [dash.no_update] * len(module_ids), [dash.no_update] * len(module_ids)
+
+    target_module = button_data['module']
+    button_type = button_data['type']
+
+    # Determine mode from button type
+    mode_map = {
+        "live-btn": "live",
+        "historical-btn": "historical",
+        "auto-btn": "auto",
+        "refresh-btn": "auto"  # Refresh uses current/auto mode
+    }
+    mode = mode_map.get(button_type, "auto")
+
+    # Update only the target module
+    data_infos = []
+    contents = []
+
+    for module_id in module_ids:
+        module_name = module_id['module']
+
+        if module_name == target_module:
+            try:
+                # Get the appropriate module instance
+                module_map = {
+                    'flow_scanner': flow_scanner_module,
+                    'iv_surface': iv_surface_module,
+                    'options_heatmap': options_heatmap_module,
+                    'strike_analysis': strike_analysis_module,
+                    'options_chain': options_chain_module,
+                    'intraday_charts': intraday_charts_module,
+                    'dealer_surfaces': dealer_surfaces_module,
+                    'ridgeline': ridgeline_module
+                }
+
+                module = module_map.get(module_name)
+                if module:
+                    # Update module data with selected mode
+                    data = module.update_data(ticker, mode=mode)
+
+                    # Get data quality info
+                    quality_info = module.get_data_quality_info()
+                    if quality_info:
+                        data_info = create_data_quality_alert(quality_info['info'])
+                        data_infos.append(data_info)
+                    else:
+                        data_infos.append(dash.no_update)
+
+                    # Create refreshed content (module-specific implementation needed)
+                    contents.append(html.Div(f"Updated {module_name} with {mode} mode"))
+                else:
+                    data_infos.append(dash.no_update)
+                    contents.append(dash.no_update)
+            except Exception as e:
+                error_alert = html.Div(f"Error updating {module_name}: {str(e)}",
+                                     className="alert alert-danger")
+                data_infos.append(error_alert)
+                contents.append(dash.no_update)
+        else:
+            data_infos.append(dash.no_update)
+            contents.append(dash.no_update)
+
+    return data_infos, contents
+
+# Enhanced Data Status Callback for Individual Modules
+@callback(
+    Output("data-status", "children", allow_duplicate=True),
+    [Input("current-ticker-store", "data")],
+    prevent_initial_call=True
+)
+def update_enhanced_data_status(ticker):
+    """Update data status with quality information when ticker changes"""
+    if not ticker:
+        return "No ticker selected"
+
+    # Show universal data system status
+    try:
+        data_adapter = ModuleDataAdapter()
+        return html.Div([
+            dbc.Alert([
+                html.I(className="fas fa-magic me-2"),
+                html.Strong("Universal Data System Active"),
+                html.Br(),
+                f"Ready to provide always-available analysis for {ticker}",
+                html.Br(),
+                html.Small("Intelligent routing: Live → Historical → Enriched", className="text-muted")
+            ], color="info", className="mb-2"),
+
+            html.Small([
+                html.I(className="fas fa-info-circle me-1"),
+                "All modules now support Live/Historical/Auto data modes"
+            ], className="text-muted")
+        ])
+    except Exception as e:
+        return dbc.Alert(f"Universal data system error: {str(e)}", color="warning")
+
+# Dynamic Module Header Updates
+@callback(
+    Output("options-chain-header", "children"),
+    Input("current-ticker-store", "data"),
+    prevent_initial_call=True
+)
+def update_options_chain_header(ticker):
+    """Update options chain header when ticker changes"""
+    if ticker:
+        return f"📊 Enhanced Options Chain - {ticker}"
+    return "📊 Enhanced Options Chain"
+
+@callback(
+    Output("ridgeline-header", "children"),
+    Input("current-ticker-store", "data"),
+    prevent_initial_call=True
+)
+def update_ridgeline_header(ticker):
+    """Update ridgeline header when ticker changes"""
+    if ticker:
+        return f"📊 Ridgeline Analysis - {ticker}"
+    return "📊 Ridgeline Analysis"
+
+@callback(
+    Output("strike-analysis-header", "children"),
+    Input("current-ticker-store", "data"),
+    prevent_initial_call=True
+)
+def update_strike_analysis_header(ticker):
+    """Update strike analysis header when ticker changes"""
+    if ticker:
+        return f"📊 Strike Analysis - {ticker}"
+    return "📊 Strike Analysis"
 
 if __name__ == "__main__":
     app.run_server(host=APP_HOST, port=APP_PORT, debug=DEBUG_MODE)

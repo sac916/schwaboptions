@@ -15,7 +15,7 @@ import warnings
 warnings.filterwarnings('ignore')
 
 from modules.base_module import BaseModule
-from data.schwab_client import schwab_client
+from data.module_data_adapter import ModuleDataAdapter
 from data.processors import OptionsProcessor
 from config import THEME_CONFIG
 
@@ -25,26 +25,29 @@ class IVSurfaceModule(BaseModule):
     def __init__(self):
         super().__init__(
             module_id="iv_surface",
-            name="IV Surface", 
+            name="IV Surface",
             description="Implied volatility term structure with historical watermarks"
         )
         self.iv_history = []  # Store historical IV data
+        self.data_adapter = ModuleDataAdapter()
         
-    def update_data(self, ticker: str, **kwargs):
-        """Update IV surface data"""
+    def update_data(self, ticker: str, mode: str = "auto", target_date = None, **kwargs):
+        """Update IV surface data using universal data adapter"""
         try:
-            raw_data = schwab_client.get_option_chain(
+            # Get data through universal adapter
+            data_result = self.data_adapter.get_options_analysis(
                 symbol=ticker,
-                contractType="ALL",           # Get both calls and puts
-                strikeCount=40,               # More strikes for better surface
-                includeUnderlyingQuote=True,  # Include underlying stock data
-                range="ALL",                  # All options (ITM, ATM, OTM) for full surface
-                daysToExpiration=120          # 4 months for better time dimension
+                analysis_type="iv_surface",
+                force_mode=mode,
+                target_date=target_date
             )
-            if raw_data:
-                self.data = OptionsProcessor.parse_option_chain(raw_data)
+
+            if data_result and data_result.get('options_data') is not None:
+                self.data = data_result['options_data']
+                self.data_quality = data_result.get('data_quality')
+                self.data_info = data_result.get('data_info', {})
                 self._last_updated = datetime.now()
-                
+
                 # Store historical IV point
                 if not self.data.empty:
                     current_iv = self._calculate_iv_metrics()
@@ -62,7 +65,16 @@ class IVSurfaceModule(BaseModule):
         except Exception as e:
             print(f"Error updating IV data: {e}")
         return None
-    
+
+    def get_data_quality_info(self):
+        """Get current data quality information for UI display"""
+        if hasattr(self, 'data_quality') and hasattr(self, 'data_info'):
+            return {
+                'quality': self.data_quality,
+                'info': self.data_info
+            }
+        return None
+
     def _calculate_iv_metrics(self):
         """Calculate key IV metrics"""
         if self.data.empty:

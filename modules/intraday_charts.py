@@ -11,7 +11,7 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
 from modules.base_module import BaseModule
-from data.schwab_client import schwab_client
+from data.module_data_adapter import ModuleDataAdapter
 from data.processors import OptionsProcessor
 from config import THEME_CONFIG
 
@@ -25,26 +25,30 @@ class IntradayChartsModule(BaseModule):
             description="Live intraday chart with options flow overlay"
         )
         self.price_history = []
+        self.data_adapter = ModuleDataAdapter()
         self.flow_history = []
         
-    def update_data(self, ticker: str, **kwargs):
-        """Update intraday data with options flow"""
+    def update_data(self, ticker: str, mode: str = "auto", target_date = None, **kwargs):
+        """Update intraday data with options flow using universal data adapter"""
         try:
-            raw_data = schwab_client.get_option_chain(
+            # Get data through universal adapter
+            data_result = self.data_adapter.get_options_analysis(
                 symbol=ticker,
-                contractType="ALL",
-                strikeCount=40,
-                includeUnderlyingQuote=True,
-                range="ALL",
-                daysToExpiration=120
+                analysis_type="intraday_charts",
+                force_mode=mode,
+                target_date=target_date
             )
-            if raw_data:
-                self.data = OptionsProcessor.parse_option_chain(raw_data)
-                
-                # Get underlying price
+
+            if data_result and data_result.get('options_data') is not None:
+                self.data = data_result['options_data']
+                self.data_quality = data_result.get('data_quality')
+                self.data_info = data_result.get('data_info', {})
+
+                # Get underlying price from data
+                raw_data = data_result.get('raw_data', {})
                 underlying_price = raw_data.get('underlying', {}).get('last', 0)
                 current_time = datetime.now()
-                
+
                 # Store price point
                 self.price_history.append({
                     'timestamp': current_time,
@@ -70,7 +74,16 @@ class IntradayChartsModule(BaseModule):
         except Exception as e:
             print(f"Error updating intraday data: {e}")
         return None
-    
+
+    def get_data_quality_info(self):
+        """Get current data quality information for UI display"""
+        if hasattr(self, 'data_quality') and hasattr(self, 'data_info'):
+            return {
+                'quality': self.data_quality,
+                'info': self.data_info
+            }
+        return None
+
     def _calculate_flow_metrics(self):
         """Calculate current flow metrics"""
         metrics = {}

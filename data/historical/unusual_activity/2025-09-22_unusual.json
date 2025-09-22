@@ -1,0 +1,150 @@
+{
+  "date": "2025-09-22",
+  "symbol": "AMZN",
+  "unusual_flows": [
+    {
+      "type": "PUT",
+      "strike": 227.5,
+      "expiry": "2025-09-26:4",
+      "volume": 7969,
+      "open_interest": 4792,
+      "last_price": 1.55,
+      "unusual_score": 6.66
+    },
+    {
+      "type": "CALL",
+      "strike": 230.0,
+      "expiry": "2025-09-26:4",
+      "volume": 11738,
+      "open_interest": 9646,
+      "last_price": 3.13,
+      "unusual_score": 6.22
+    },
+    {
+      "type": "CALL",
+      "strike": 232.5,
+      "expiry": "2025-09-26:4",
+      "volume": 8147,
+      "open_interest": 8427,
+      "last_price": 1.95,
+      "unusual_score": 5.97
+    },
+    {
+      "type": "CALL",
+      "strike": 235.0,
+      "expiry": "2025-09-26:4",
+      "volume": 10048,
+      "open_interest": 15737,
+      "last_price": 1.15,
+      "unusual_score": 5.64
+    },
+    {
+      "type": "PUT",
+      "strike": 225.0,
+      "expiry": "2025-09-26:4",
+      "volume": 5840,
+      "open_interest": 11262,
+      "last_price": 0.9,
+      "unusual_score": 5.52
+    },
+    {
+      "type": "CALL",
+      "strike": 245.0,
+      "expiry": "2025-10-17:25",
+      "volume": 7961,
+      "open_interest": 23178,
+      "last_price": 1.86,
+      "unusual_score": 5.34
+    },
+    {
+      "type": "CALL",
+      "strike": 240.0,
+      "expiry": "2025-09-26:4",
+      "volume": 7461,
+      "open_interest": 26174,
+      "last_price": 0.37,
+      "unusual_score": 5.29
+    },
+    {
+      "type": "CALL",
+      "strike": 237.5,
+      "expiry": "2025-09-26:4",
+      "volume": 5281,
+      "open_interest": 19037,
+      "last_price": 0.65,
+      "unusual_score": 5.28
+    },
+    {
+      "type": "PUT",
+      "strike": 210.0,
+      "expiry": "2025-09-26:4",
+      "volume": 2943,
+      "open_interest": 2107,
+      "last_price": 0.07,
+      "unusual_score": 4.34
+    },
+    {
+      "type": "CALL",
+      "strike": 227.5,
+      "expiry": "2025-09-26:4",
+      "volume": 2937,
+      "open_interest": 2335,
+      "last_price": 4.62,
+      "unusual_score": 4.19
+    },
+    {
+      "type": "CALL",
+      "strike": 237.5,
+      "expiry": "2025-10-03:11",
+      "volume": 3476,
+      "open_interest": 5660,
+      "last_price": 1.83,
+      "unusual_score": 4.09
+    },
+    {
+      "type": "CALL",
+      "strike": 240.0,
+      "expiry": "2025-10-03:11",
+      "volume": 3746,
+      "open_interest": 19344,
+      "last_price": 1.3,
+      "unusual_score": 3.94
+    },
+    {
+      "type": "PUT",
+      "strike": 220.0,
+      "expiry": "2025-09-26:4",
+      "volume": 2988,
+      "open_interest": 6586,
+      "last_price": 0.31,
+      "unusual_score": 3.44
+    },
+    {
+      "type": "CALL",
+      "strike": 250.0,
+      "expiry": "2025-10-17:25",
+      "volume": 3272,
+      "open_interest": 47616,
+      "last_price": 1.17,
+      "unusual_score": 3.34
+    },
+    {
+      "type": "CALL",
+      "strike": 240.0,
+      "expiry": "2025-10-17:25",
+      "volume": 3006,
+      "open_interest": 28169,
+      "last_price": 3.05,
+      "unusual_score": 3.11
+    },
+    {
+      "type": "CALL",
+      "strike": 235.0,
+      "expiry": "2025-10-03:11",
+      "volume": 2854,
+      "open_interest": 13441,
+      "last_price": 2.58,
+      "unusual_score": 3.07
+    }
+  ]
+}

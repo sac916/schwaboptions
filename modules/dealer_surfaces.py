@@ -15,7 +15,7 @@ import warnings
 warnings.filterwarnings('ignore')
 
 from modules.base_module import BaseModule
-from data.schwab_client import schwab_client
+from data.module_data_adapter import ModuleDataAdapter
 from data.processors import OptionsProcessor
 from config import THEME_CONFIG
 
@@ -25,31 +25,34 @@ class DealerSurfacesModule(BaseModule):
     def __init__(self):
         super().__init__(
             module_id="dealer_surfaces",
-            name="3D Dealer Surfaces", 
+            name="3D Dealer Surfaces",
             description="Advanced 3D dealer delta and gamma positioning analysis"
         )
         self.dealer_history = []  # Store historical dealer positioning
+        self.data_adapter = ModuleDataAdapter()
         self.current_spot = None
         
-    def update_data(self, ticker: str, **kwargs):
-        """Update dealer surface data with advanced calculations"""
+    def update_data(self, ticker: str, mode: str = "auto", target_date = None, **kwargs):
+        """Update dealer surface data with advanced calculations using universal data adapter"""
         try:
-            raw_data = schwab_client.get_option_chain(
+            # Get data through universal adapter
+            data_result = self.data_adapter.get_options_analysis(
                 symbol=ticker,
-                contractType="ALL",
-                strikeCount=40,
-                includeUnderlyingQuote=True,
-                range="ALL",
-                daysToExpiration=120
+                analysis_type="dealer_surfaces",
+                force_mode=mode,
+                target_date=target_date
             )
-            if raw_data:
-                self.data = OptionsProcessor.parse_option_chain(raw_data)
+
+            if data_result and data_result.get('options_data') is not None:
+                self.data = data_result['options_data']
+                self.data_quality = data_result.get('data_quality')
+                self.data_info = data_result.get('data_info', {})
                 self._last_updated = datetime.now()
-                
+
                 # Calculate dealer positioning metrics
                 if not self.data.empty:
                     self.data = self._calculate_dealer_metrics()
-                    
+
                     # Store historical dealer positioning
                     dealer_snapshot = self._calculate_dealer_snapshot()
                     self.dealer_history.append({
@@ -66,7 +69,16 @@ class DealerSurfacesModule(BaseModule):
         except Exception as e:
             print(f"Error updating dealer surface data: {e}")
         return None
-    
+
+    def get_data_quality_info(self):
+        """Get current data quality information for UI display"""
+        if hasattr(self, 'data_quality') and hasattr(self, 'data_info'):
+            return {
+                'quality': self.data_quality,
+                'info': self.data_info
+            }
+        return None
+
     def _calculate_dealer_metrics(self):
         """Calculate advanced dealer positioning metrics"""
         if self.data.empty:

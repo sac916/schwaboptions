@@ -12,7 +12,7 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
 from modules.base_module import BaseModule
-from data.schwab_client import schwab_client
+from data.module_data_adapter import ModuleDataAdapter
 from data.processors import OptionsProcessor
 from config import THEME_CONFIG
 
@@ -25,24 +25,36 @@ class OptionsHeatmapModule(BaseModule):
             name="Options Heatmap",
             description="Visual options chain heatmap with activity levels"
         )
+        self.data_adapter = ModuleDataAdapter()
         
-    def update_data(self, ticker: str, **kwargs):
-        """Update options data for heatmap"""
+    def update_data(self, ticker: str, mode: str = "auto", target_date = None, **kwargs):
+        """Update options data for heatmap using universal data adapter"""
         try:
-            raw_data = schwab_client.get_option_chain(
+            # Get data through universal adapter
+            data_result = self.data_adapter.get_options_analysis(
                 symbol=ticker,
-                contractType="ALL",
-                strikeCount=40,
-                includeUnderlyingQuote=True,
-                range="ALL",
-                daysToExpiration=120
+                analysis_type="options_heatmap",
+                force_mode=mode,
+                target_date=target_date
             )
-            if raw_data:
-                self.data = OptionsProcessor.parse_option_chain(raw_data)
+
+            if data_result and data_result.get('options_data') is not None:
+                self.data = data_result['options_data']
+                self.data_quality = data_result.get('data_quality')
+                self.data_info = data_result.get('data_info', {})
                 self._last_updated = datetime.now()
                 return self.data
         except Exception as e:
             print(f"Error updating heatmap data: {e}")
+        return None
+
+    def get_data_quality_info(self):
+        """Get current data quality information for UI display"""
+        if hasattr(self, 'data_quality') and hasattr(self, 'data_info'):
+            return {
+                'quality': self.data_quality,
+                'info': self.data_info
+            }
         return None
     
     def create_visualizations(self):
