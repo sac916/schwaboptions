@@ -89,7 +89,7 @@ class WebFriendlySchwabClient:
             return None
 
     def process_callback_url(self, callback_url: str) -> Dict[str, Any]:
-        """Process the callback URL and create tokens"""
+        """Process the callback URL and create tokens using non-interactive method"""
         result = {
             "success": False,
             "message": "",
@@ -107,29 +107,43 @@ class WebFriendlySchwabClient:
             if os.path.exists(tokens_file):
                 os.remove(tokens_file)
 
-            # Create a temporary client to process the callback
-            temp_client = schwab.Client(
-                app_key=API_KEY,
-                app_secret=API_SECRET,
-                callback_url="https://127.0.0.1",
-                tokens_file=tokens_file,
-                timeout=30
-            )
+            # Mock the input function to provide callback URL automatically
+            import builtins
+            original_input = builtins.input
 
-            # Process the authorization callback
-            temp_client._process_authorization_callback(callback_url)
+            def mock_input(prompt=""):
+                if any(keyword in prompt.lower() for keyword in ["paste", "url", "address", "bar"]):
+                    logger.info("Auto-providing callback URL to schwabdev client")
+                    return callback_url
+                return ""
 
-            # Test the connection
-            test_response = temp_client.quotes(['SPY'])
-            if test_response.ok:
-                self.client = temp_client
-                self._authenticated = True
-                result["success"] = True
-                result["authenticated"] = True
-                result["message"] = "Authentication successful! API connection verified."
-                logger.info("Successfully processed callback URL and verified API connection")
-            else:
-                result["message"] = f"Token created but API test failed: {test_response.status_code}"
+            builtins.input = mock_input
+
+            try:
+                # Create a temporary client to process the callback
+                temp_client = schwab.Client(
+                    app_key=API_KEY,
+                    app_secret=API_SECRET,
+                    callback_url="https://127.0.0.1",
+                    tokens_file=tokens_file,
+                    timeout=30
+                )
+
+                # Test the connection
+                test_response = temp_client.quotes(['SPY'])
+                if test_response.ok:
+                    self.client = temp_client
+                    self._authenticated = True
+                    result["success"] = True
+                    result["authenticated"] = True
+                    result["message"] = "Authentication successful! API connection verified."
+                    logger.info("Successfully processed callback URL and verified API connection")
+                else:
+                    result["message"] = f"Token created but API test failed: {test_response.status_code}"
+
+            finally:
+                # Always restore original input function
+                builtins.input = original_input
 
         except Exception as e:
             logger.error(f"Error processing callback URL: {e}")
