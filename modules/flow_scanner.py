@@ -13,7 +13,9 @@ import plotly.graph_objects as go
 from modules.base_module import BaseModule
 from data.module_data_adapter import ModuleDataAdapter
 from data.processors import OptionsProcessor
+from data.ml_pattern_engine import ml_engine
 from config import THEME_CONFIG
+from plotly_config import get_optimized_config, apply_performance_layout
 from datetime import date
 
 class FlowScannerModule(BaseModule):
@@ -87,10 +89,13 @@ class FlowScannerModule(BaseModule):
             
             # Unusual Activity
             'unusual_volume': 'Unusual Volume Score',
-            'unusual_premium': 'Unusual Premium Score', 
+            'unusual_premium': 'Unusual Premium Score',
             'sweep_score': 'Option Sweep Score',
             'block_score': 'Block Trade Score',
             'whale_activity': 'Large Order Score',
+            'ml_unusual_score': 'AI/ML Unusual Activity Score',
+            'ml_confidence': 'ML Model Confidence',
+            'ml_anomaly_score': 'ML Anomaly Detection Score',
             
             # Market Context
             'sector_flow': 'Sector Flow Alignment',
@@ -200,9 +205,84 @@ class FlowScannerModule(BaseModule):
         df['FlowDirectionScore'] = 0
         df.loc[calls_mask, 'FlowDirectionScore'] = df.loc[calls_mask, 'Volume'] * 1
         df.loc[puts_mask, 'FlowDirectionScore'] = df.loc[puts_mask, 'Volume'] * -1
-        
+
+        # ML-based unusual activity scoring
+        df = self._add_ml_scoring(df)
+
         return df
-    
+
+    def _add_ml_scoring(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Add ML-based unusual activity scoring to options data"""
+        try:
+            # Initialize ML scores to default values
+            df['ml_unusual_score'] = 0.5
+            df['ml_confidence'] = 0.0
+            df['ml_anomaly_score'] = 0.0
+
+            # Only compute ML scores if we have sufficient data
+            if len(df) < 5:
+                return df
+
+            # Prepare data for ML engine
+            ml_input_data = df.copy()
+
+            # Map column names to match ML engine expectations
+            column_mapping = {
+                'Volume': 'totalVolume',
+                'Premium': 'mark',
+                'OpenInt': 'openInterest',
+                'Delta': 'delta',
+                'Gamma': 'gamma',
+                'Theta': 'theta',
+                'Vega': 'vega',
+                'IV': 'volatility',
+                'DTE': 'daysToExpiration',
+                'Strike': 'strike'
+            }
+
+            # Rename columns and add missing ones with defaults
+            for old_col, new_col in column_mapping.items():
+                if old_col in ml_input_data.columns:
+                    ml_input_data[new_col] = ml_input_data[old_col]
+                else:
+                    ml_input_data[new_col] = 0
+
+            # Add additional fields expected by ML engine
+            if 'avg_volume' not in ml_input_data.columns:
+                ml_input_data['avg_volume'] = ml_input_data.get('totalVolume', 0).rolling(window=20, min_periods=1).mean()
+            if 'iv_rank' not in ml_input_data.columns:
+                ml_input_data['iv_rank'] = ml_input_data.get('volatility', 0).rank(pct=True) * 100
+            if 'underlying_price' not in ml_input_data.columns:
+                ml_input_data['underlying_price'] = ml_input_data.get('strike', 100)  # Approximate
+
+            # Get ML predictions
+            ml_results = ml_engine.predict_unusual_activity(ml_input_data)
+
+            # Apply ML scores to the dataframe
+            if isinstance(ml_results, dict) and 'probability' in ml_results:
+                # Single prediction for entire dataset
+                df['ml_unusual_score'] = ml_results.get('ml_score', 0.5) * 100  # Convert to 0-100 scale
+                df['ml_confidence'] = ml_results.get('confidence', 0.0) * 100
+                df['ml_anomaly_score'] = abs(ml_results.get('anomaly_score', 0.0)) * 100
+            else:
+                # Keep default values if ML prediction fails
+                pass
+
+            # Combine traditional and ML scores for enhanced unusual activity detection
+            if 'UnusualScore' in df.columns:
+                df['enhanced_unusual_score'] = (
+                    df['UnusualScore'] * 0.6 +
+                    df['ml_unusual_score'] * 0.4
+                )
+            else:
+                df['enhanced_unusual_score'] = df['ml_unusual_score']
+
+        except Exception as e:
+            print(f"ML scoring failed: {e}")
+            # Keep default values on error
+
+        return df
+
     def analyze_historical_flow(self, symbol: str, timeframe_days: int) -> dict:
         """Analyze historical flow patterns (Unusual Whales style)"""
         try:
@@ -463,7 +543,8 @@ class FlowScannerModule(BaseModule):
         # Select key flow columns
         display_cols = [
             'Type', 'Strike', 'Expiry', 'Volume', 'Premium', 'DollarVolume',
-            'VolOI_Ratio', 'IV', 'UnusualScore', 'LiquidityScore', 'MoneynessCategory',
+            'VolOI_Ratio', 'IV', 'UnusualScore', 'ml_unusual_score', 'ml_confidence',
+            'enhanced_unusual_score', 'LiquidityScore', 'MoneynessCategory',
             'DTECategory', 'FlowDirectionScore', 'SweepScore', 'BlockScore', 'WhaleActivity'
         ]
         
@@ -471,13 +552,26 @@ class FlowScannerModule(BaseModule):
         available_cols = [col for col in display_cols if col in self.data.columns]
         display_data = self.data[available_cols].copy()
         
-        # Sort by unusual activity
-        if 'UnusualScore' in display_data.columns:
+        # Sort by enhanced unusual activity (ML + traditional)
+        if 'enhanced_unusual_score' in display_data.columns:
+            display_data = display_data.sort_values('enhanced_unusual_score', ascending=False)
+        elif 'UnusualScore' in display_data.columns:
             display_data = display_data.sort_values('UnusualScore', ascending=False)
         
         # Conditional formatting for table
         style_conditions = [
-            # Unusual activity
+            # ML-Enhanced unusual activity (highest priority)
+            {
+                'if': {'filter_query': '{enhanced_unusual_score} > 75'},
+                'backgroundColor': 'rgba(138, 43, 226, 0.5)',  # Purple for ML high
+                'color': 'white'
+            },
+            {
+                'if': {'filter_query': '{enhanced_unusual_score} > 60'},
+                'backgroundColor': 'rgba(138, 43, 226, 0.3)',
+                'color': 'white'
+            },
+            # Traditional unusual activity
             {
                 'if': {'filter_query': '{UnusualScore} > 75'},
                 'backgroundColor': 'rgba(255, 0, 0, 0.4)',
@@ -487,6 +581,12 @@ class FlowScannerModule(BaseModule):
                 'if': {'filter_query': '{UnusualScore} > 50'},
                 'backgroundColor': 'rgba(255, 165, 0, 0.4)',
                 'color': 'white'
+            },
+            # High ML confidence
+            {
+                'if': {'filter_query': '{ml_confidence} > 80'},
+                'backgroundColor': 'rgba(0, 255, 127, 0.3)',
+                'color': 'black'
             },
             # Large volume
             {
@@ -574,17 +674,22 @@ class FlowScannerModule(BaseModule):
         
         fig.add_hline(y=0, line_dash="dash", line_color="white", opacity=0.5)
         
+        # Apply performance-optimized layout
+        apply_performance_layout(fig, THEME_CONFIG)
+
+        # Override with specific settings for this chart
         fig.update_layout(
             title="Options Flow Analysis (Bubble Size = Volume)",
             xaxis_title="Days to Expiration",
             yaxis_title="Premium (Calls +, Puts -)",
-            plot_bgcolor=THEME_CONFIG["paper_color"],
-            paper_bgcolor=THEME_CONFIG["background_color"],
-            font=dict(color=THEME_CONFIG["text_color"]),
             height=600
         )
-        
-        return dcc.Graph(figure=fig)
+
+        # Use optimized config for flow charts
+        return dcc.Graph(
+            figure=fig,
+            config=get_optimized_config("flow_chart")
+        )
     
     def _create_parameter_analysis(self):
         """Create parameter importance analysis"""
@@ -618,17 +723,21 @@ class FlowScannerModule(BaseModule):
             marker_color=THEME_CONFIG["primary_color"]
         ))
         
+        # Apply performance-optimized layout
+        apply_performance_layout(fig, THEME_CONFIG)
+
+        # Override with specific settings
         fig.update_layout(
             title="Top Flow Parameters (Correlation with Unusual Activity)",
             xaxis_title="Correlation Strength",
             yaxis_title="Parameter",
-            plot_bgcolor=THEME_CONFIG["paper_color"],
-            paper_bgcolor=THEME_CONFIG["background_color"],
-            font=dict(color=THEME_CONFIG["text_color"]),
             height=500
         )
-        
-        return dcc.Graph(figure=fig)
+
+        return dcc.Graph(
+            figure=fig,
+            config=get_optimized_config("performance_critical")
+        )
     
     def _create_unusual_alerts(self):
         """Create unusual activity alerts"""
@@ -636,11 +745,27 @@ class FlowScannerModule(BaseModule):
         
         if self.data.empty:
             return html.Div("No data for alerts")
-        
-        # High unusual score alerts
+
+        # ML-Enhanced unusual activity alerts (highest priority)
+        if 'enhanced_unusual_score' in self.data.columns:
+            ml_unusual_high = self.data[self.data['enhanced_unusual_score'] > 75]
+            for _, row in ml_unusual_high.head(3).iterrows():
+                ml_score = row.get('ml_unusual_score', 0)
+                confidence = row.get('ml_confidence', 0)
+                alerts.append(
+                    dbc.Alert([
+                        html.H6(f"🤖 AI/ML HIGH UNUSUAL ACTIVITY", className="alert-heading"),
+                        html.P(f"{row.get('Type', 'N/A')} {row.get('Strike', 'N/A')} "
+                              f"exp {row.get('Expiry', 'N/A')} - Enhanced Score: {row.get('enhanced_unusual_score', 0):.0f}"),
+                        html.P(f"ML Score: {ml_score:.0f} | Confidence: {confidence:.0f}%",
+                               className="mb-0 small text-muted")
+                    ], color="dark", className="mb-2")
+                )
+
+        # High unusual score alerts (traditional)
         if 'UnusualScore' in self.data.columns:
             unusual_high = self.data[self.data['UnusualScore'] > 75]
-            for _, row in unusual_high.head(5).iterrows():
+            for _, row in unusual_high.head(3).iterrows():
                 alerts.append(
                     dbc.Alert([
                         html.H6(f"🚨 HIGH UNUSUAL ACTIVITY", className="alert-heading"),
@@ -794,7 +919,8 @@ class FlowScannerModule(BaseModule):
                         html.H6("🔍 Analysis Features:"),
                         html.Ul([
                             html.Li("100+ Flow Parameters"),
-                            html.Li("Unusual Activity Detection"),
+                            html.Li("🤖 AI/ML Pattern Recognition"),
+                            html.Li("Enhanced Unusual Activity Detection"),
                             html.Li("Option Sweeps & Blocks"),
                             html.Li("Whale Activity Alerts")
                         ])

@@ -143,27 +143,98 @@ app.layout = create_main_layout
 clientside_callback(
     """
     function(children) {
-        // Clean up any existing timeouts/intervals on component change
+        // Enhanced memory leak prevention and cleanup
+        console.log('[SchwaOptions] Component cleanup triggered');
+
+        // Clean up existing timeouts with better tracking
         if (window.dashTimeouts) {
-            window.dashTimeouts.forEach(id => clearTimeout(id));
+            console.log('[Cleanup] Clearing', window.dashTimeouts.length, 'timeouts');
+            window.dashTimeouts.forEach(id => {
+                try {
+                    clearTimeout(id);
+                } catch (e) {
+                    console.warn('[Cleanup] Failed to clear timeout:', id, e);
+                }
+            });
             window.dashTimeouts = [];
         }
+
+        // Clean up existing intervals
         if (window.dashIntervals) {
-            window.dashIntervals.forEach(id => clearInterval(id));
+            console.log('[Cleanup] Clearing', window.dashIntervals.length, 'intervals');
+            window.dashIntervals.forEach(id => {
+                try {
+                    clearInterval(id);
+                } catch (e) {
+                    console.warn('[Cleanup] Failed to clear interval:', id, e);
+                }
+            });
             window.dashIntervals = [];
         }
-        
-        // Override setTimeout to track timeouts
+
+        // Clean up any React component state update callbacks
+        if (window.dashComponentCallbacks) {
+            console.log('[Cleanup] Clearing component callbacks');
+            window.dashComponentCallbacks.forEach(callback => {
+                try {
+                    callback.abort && callback.abort();
+                } catch (e) {
+                    console.warn('[Cleanup] Failed to abort callback:', e);
+                }
+            });
+            window.dashComponentCallbacks = [];
+        }
+
+        // Simplified setTimeout tracking without interference
         if (!window.originalSetTimeout) {
             window.originalSetTimeout = window.setTimeout;
             window.dashTimeouts = window.dashTimeouts || [];
+
             window.setTimeout = function(callback, delay) {
+                // Just track timeouts without wrapping the callback
                 const id = window.originalSetTimeout(callback, delay);
                 window.dashTimeouts.push(id);
                 return id;
             };
         }
-        
+
+        // Clean up before page unload
+        if (!window.dashUnloadHandlerAdded) {
+            window.addEventListener('beforeunload', function() {
+                console.log('[SchwaOptions] Page unload - final cleanup');
+                if (window.dashTimeouts) {
+                    window.dashTimeouts.forEach(id => clearTimeout(id));
+                }
+                if (window.dashIntervals) {
+                    window.dashIntervals.forEach(id => clearInterval(id));
+                }
+            });
+            window.dashUnloadHandlerAdded = true;
+        }
+
+        // Optimize all canvas elements for performance
+        const optimizeCanvases = () => {
+            document.querySelectorAll('canvas').forEach(canvas => {
+                if (!canvas.getAttribute('willReadFrequently')) {
+                    canvas.setAttribute('willReadFrequently', 'true');
+                    console.log('[Plotly] Added willReadFrequently to canvas');
+                }
+            });
+        };
+
+        // Apply canvas optimizations
+        optimizeCanvases();
+
+        // Watch for new canvases
+        if (!window.canvasObserver) {
+            window.canvasObserver = new MutationObserver(optimizeCanvases);
+            window.canvasObserver.observe(document.body, {
+                childList: true,
+                subtree: true
+            });
+        }
+
+        console.log('[SchwaOptions] Cleanup and optimization completed successfully');
         return window.dash_clientside.no_update;
     }
     """,
